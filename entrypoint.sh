@@ -1,6 +1,7 @@
+#!/bin/bash
+
 #
 # Copyright (c) 2021 Matthew Penner
-# Copyright (c) 2021-2022 MeProject Studio contributors
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +21,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# 
 
-FROM        openjdk:21-bookworm
+# Default the TZ environment variable to UTC.
+TZ=${TZ:-UTC}
+export TZ
 
-LABEL       author="Matthew Penner. MeProject Studio contributors." maintainer="support@meproject.ru"
+# Set environment variable that holds the Internal Docker IP
+INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
+export INTERNAL_IP
 
-LABEL       org.opencontainers.image.source="https://github.com/CAT-TOM/gravit-egg"
-LABEL       org.opencontainers.image.licenses=MIT
-LABEL       org.opencontainers.image.description="This Yolk is made for Pterodactyl panel as part of GravitLauncher Egg. Based on official Pterodactyl yolk for Java"
+# Switch to the container's working directory
+cd /home/container || exit 1
 
-USER        root
+# Print Java version
+printf "\033[1m\033[33mcontainer@pterodactyl~ \033[0mjava -version\n"
+java -version
 
-ENV         JMODS_DIR=/usr/share/openjfx/jmods
-ENV         JMODS_URL=https://download2.gluonhq.com/openjfx/21/openjfx-21_linux-x64_bin-jmods.zip
+# Convert all of the "{{VARIABLE}}" parts of the command into the expected shell
+# variable format of "${VARIABLE}" before evaluating the string and automatically
+# replacing the values.
+PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
 
-RUN         curl -L ${JMODS_URL} -o openjfx.zip \
-            && unzip openjfx.zip && rm openjfx.zip \
-            && mkdir -p ${JMODS_DIR} \
-            && cp javafx-jmods-21/* /usr/share/openjfx/jmods
-            
-USER        container
-            
-COPY        ./entrypoint.sh /entrypoint.sh
-CMD         [ "/bin/bash", "/entrypoint.sh" ]
+# Display the command we're running in the output, and then execute it with the env
+# from the container itself.
+printf "\033[1m\033[33mcontainer@pterodactyl~ \033[0m%s\n" "$PARSED"
+# shellcheck disable=SC2086
+exec env ${PARSED}
