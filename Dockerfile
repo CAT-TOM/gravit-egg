@@ -32,6 +32,9 @@ LABEL       org.opencontainers.image.description="This Yolk is made for Pterodac
 
 USER        root
 
+RUN 	apt-get update -y \
+            apt-get install -y lsof curl ca-certificates openssl git tar sqlite3 osslsigncode unzip fontconfig libfreetype6 tzdata iproute2 libstdc++6
+
 ENV         JMODS_DIR=/usr/share/openjfx/jmods
 
 COPY        ./openjfx-21_linux-x64_bin-jmods.zip /openjfx.zip
